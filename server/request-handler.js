@@ -11,6 +11,9 @@ this file and include it in basic-server.js so that it actually works.
 *Hint* Check out the node module documentation at http://nodejs.org/api/modules.html.
 
 **************************************************************/
+var database = {
+  results: []
+};
 
 var requestHandler = function(request, response) {
   // Request and Response come from node's http module.
@@ -33,47 +36,51 @@ var requestHandler = function(request, response) {
   var statusCode = 200;
   var tempUrl = request.url;
   
-  var database = {
-    results: []    
-  };
-  
-
-  database[tempUrl] = database[tempUrl] || [];
-
-  // var results = [];
-  // See the note below about CORS headers.
   var defaultCorsHeaders = {
     'access-control-allow-origin': '*',
     'access-control-allow-methods': 'GET, POST, PUT, DELETE, OPTIONS',
     'access-control-allow-headers': 'content-type, accept',
     'access-control-max-age': 10 // Seconds.
   };
+
   var headers = defaultCorsHeaders;
+  headers['Content-Type'] = 'text/plain';
+
+  if (request.method === 'GET') {
+    statusCode = 200;
+    response.writeHead(statusCode, headers);
+    response.end(JSON.stringify(database));
+  }
+
+  // if (request.method === 'GET' && Object.keys(database).indexOf(request.url) === -1) {
+  //   statusCode = 200;
+  //   response.writeHead(statusCode, headers);
+  //   response.end();
+  // }
 
   // Tell the client we are sending them plain text.
   //
   // You will need to change this if you are sending something
   // other than plain text, like JSON or HTML.
-  headers['Content-Type'] = 'text/plain';
   // console.log('REQUEST METHOD ===============', request.method);
   // console.log('REQUEST =================', request);
   // console.log('RESPONSEEEEEEEE', response);
-  debugger;
+  database[tempUrl] = database[tempUrl] || [];
 
   if (request.method === 'POST') {
     statusCode = 201;
-    database[tempUrl].push(request);
-    database.results.push(request);
-    response.writeHead(statusCode, headers);
-    response.end();
-  } else if (request.method === 'GET' && database[tempUrl]) {
-    response.writeHead(statusCode, headers); 
-    response.end(JSON.stringify(database));
-  } else {
-    statusCode = 404;
+    console.log('REQUEST =================', request);
+    database[tempUrl].push(request._postData);
+    database.results.push(request._postData);
     response.writeHead(statusCode, headers);
     response.end();
   }
+
+  // else if (request.method === 'GET' && database[tempUrl].length === 0) {
+  //   statusCode = 404;
+  //   response.writeHead(statusCode, headers);
+  //   response.end();
+  // }
   
   // response.writeHead(statusCode, headers);
 
