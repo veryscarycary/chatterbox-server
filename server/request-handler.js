@@ -32,10 +32,11 @@ var requestHandler = function(request, response) {
   // The outgoing status.
   var statusCode = 200;
   var tempUrl = request.url;
-
+  
   var database = {
     results: []    
   };
+  
 
   database[tempUrl] = database[tempUrl] || [];
 
@@ -54,10 +55,10 @@ var requestHandler = function(request, response) {
   // You will need to change this if you are sending something
   // other than plain text, like JSON or HTML.
   headers['Content-Type'] = 'text/plain';
-  console.log('REQUEST METHOD ===============', request.method);
-  console.log('REQUEST =================', request);
-  console.log('RESPONSEEEEEEEE', response);
-
+  // console.log('REQUEST METHOD ===============', request.method);
+  // console.log('REQUEST =================', request);
+  // console.log('RESPONSEEEEEEEE', response);
+  debugger;
 
   if (request.method === 'POST') {
     statusCode = 201;
@@ -65,13 +66,13 @@ var requestHandler = function(request, response) {
     database.results.push(request);
     response.writeHead(statusCode, headers);
     response.end();
-  } else if (request.method === 'GET' && database[tempUrl] === undefined) {
+  } else if (request.method === 'GET' && database[tempUrl]) {
+    response.writeHead(statusCode, headers); 
+    response.end(JSON.stringify(database));
+  } else {
     statusCode = 404;
     response.writeHead(statusCode, headers);
     response.end();
-  } else if (request.method === 'GET') {
-    response.writeHead(statusCode, headers); 
-    response.end(JSON.stringify(database));
   }
   
   // response.writeHead(statusCode, headers);
@@ -102,5 +103,4 @@ var requestHandler = function(request, response) {
 // client from this domain by setting up static file serving.
 
 exports.requestHandler = requestHandler;
-exports.defaultCorsHeaders = defaultCorsHeaders;
 
