@@ -13,12 +13,6 @@ this file and include it in basic-server.js so that it actually works.
 **************************************************************/
 
 var requestHandler = function(request, response) {
-  var defaultCorsHeaders = {
-    'access-control-allow-origin': '*',
-    'access-control-allow-methods': 'GET, POST, PUT, DELETE, OPTIONS',
-    'access-control-allow-headers': 'content-type, accept',
-    'access-control-max-age': 10 // Seconds.
-  };
   // Request and Response come from node's http module.
   //
   // They include information about both the incoming request, such as
@@ -37,9 +31,22 @@ var requestHandler = function(request, response) {
 
   // The outgoing status.
   var statusCode = 200;
+  var tempUrl = request.url;
 
-  var results = [];
+  var database = {
+    results: []    
+  };
+
+  database[tempUrl] = database[tempUrl] || [];
+
+  // var results = [];
   // See the note below about CORS headers.
+  var defaultCorsHeaders = {
+    'access-control-allow-origin': '*',
+    'access-control-allow-methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'access-control-allow-headers': 'content-type, accept',
+    'access-control-max-age': 10 // Seconds.
+  };
   var headers = defaultCorsHeaders;
 
   // Tell the client we are sending them plain text.
@@ -48,19 +55,32 @@ var requestHandler = function(request, response) {
   // other than plain text, like JSON or HTML.
   headers['Content-Type'] = 'text/plain';
   console.log('REQUEST METHOD ===============', request.method);
-  console.log('REQUEST DATA =================', request.data);
+  console.log('REQUEST =================', request);
+  console.log('RESPONSEEEEEEEE', response);
 
 
   if (request.method === 'POST') {
-    results.push(request.data);
+    statusCode = 201;
+    database[tempUrl].push(request);
+    database.results.push(request);
+    response.writeHead(statusCode, headers);
+    response.end();
+  } else if (request.method === 'GET' && database[tempUrl] === undefined) {
+    statusCode = 404;
+    response.writeHead(statusCode, headers);
+    response.end();
+  } else if (request.method === 'GET') {
+    response.writeHead(statusCode, headers); 
+    response.end(JSON.stringify(database));
   }
+  
+  // response.writeHead(statusCode, headers);
 
   // var my_path = url.parse(request.url).pathname;
   // var full_path = path. 
 
   // .writeHead() writes to the request line and headers of the response,
   // which includes the status and all headers.
-  response.writeHead(statusCode, headers);
 
   // Make sure to always call response.end() - Node may not send
   // anything back to the client until you do. The string you pass to
@@ -69,7 +89,6 @@ var requestHandler = function(request, response) {
   //
   // Calling .end "flushes" the response's internal buffer, forcing
   // node to actually send all the data over to the client.
-  response.end(JSON.stringify({results}));
 };
 
 // These headers will allow Cross-Origin Resource Sharing (CORS).
