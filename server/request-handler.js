@@ -1,3 +1,5 @@
+var urlParser = require('url');
+
 /*************************************************************
 
 You should implement your request handler function in this file.
@@ -15,6 +17,16 @@ var database = {
   results: []
 };
 
+var defaultCorsHeaders = {
+  'access-control-allow-origin': '*',
+  'access-control-allow-methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  'access-control-allow-headers': 'content-type, accept',
+  'access-control-max-age': 10 // Seconds.
+};
+
+var headers = defaultCorsHeaders;
+headers['Content-Type'] = 'text/plain';
+
 var requestHandler = function(request, response) {
   // Request and Response come from node's http module.
   //
@@ -30,65 +42,39 @@ var requestHandler = function(request, response) {
   // Adding more logging to your server can be an easy way to get passive
   // debugging help, but you should always be careful about leaving stray
   // console.logs in your code.
+  
   console.log('Serving request type ' + request.method + ' for url ' + request.url);
+  var tempUrl = urlParser.parse(request.url).pathname;
 
   // The outgoing status.
-  var statusCode = 200;
-  var tempUrl = request.url;
-  
-  var defaultCorsHeaders = {
-    'access-control-allow-origin': '*',
-    'access-control-allow-methods': 'GET, POST, PUT, DELETE, OPTIONS',
-    'access-control-allow-headers': 'content-type, accept',
-    'access-control-max-age': 10 // Seconds.
-  };
+  if ((/classes/).test(tempUrl)) {
+    var statusCode = 200;
 
-  var headers = defaultCorsHeaders;
-  headers['Content-Type'] = 'text/plain';
+    if (request.method === 'GET') {
+      statusCode = 200;
+      response.writeHead(statusCode, headers);
+      return response.end(JSON.stringify(database));
+    }
 
-  if (request.method === 'GET') {
-    statusCode = 200;
+    // Tell the client we are sending them plain text.
+
+    if (request.method === 'POST') {
+      statusCode = 201;
+
+      request.on('data', function (data) {
+        database.results.push(JSON.parse(data.toString()));
+        response.writeHead(statusCode, headers);
+        return response.end();
+      });
+    }
+
     response.writeHead(statusCode, headers);
-    response.end(JSON.stringify(database));
-  }
-
-  // if (request.method === 'GET' && Object.keys(database).indexOf(request.url) === -1) {
-  //   statusCode = 200;
-  //   response.writeHead(statusCode, headers);
-  //   response.end();
-  // }
-
-  // Tell the client we are sending them plain text.
-  //
-  // You will need to change this if you are sending something
-  // other than plain text, like JSON or HTML.
-  // console.log('REQUEST METHOD ===============', request.method);
-  // console.log('REQUEST =================', request);
-  // console.log('RESPONSEEEEEEEE', response);
-  database[tempUrl] = database[tempUrl] || [];
-
-  if (request.method === 'POST') {
-    statusCode = 201;
-    console.log('REQUEST =================', request);
-    database[tempUrl].push(request._postData);
-    database.results.push(request._postData);
+    return response.end();
+  } else {
+    statusCode = 404;
     response.writeHead(statusCode, headers);
-    response.end();
+    return response.end();
   }
-
-  // else if (request.method === 'GET' && database[tempUrl].length === 0) {
-  //   statusCode = 404;
-  //   response.writeHead(statusCode, headers);
-  //   response.end();
-  // }
-  
-  // response.writeHead(statusCode, headers);
-
-  // var my_path = url.parse(request.url).pathname;
-  // var full_path = path. 
-
-  // .writeHead() writes to the request line and headers of the response,
-  // which includes the status and all headers.
 
   // Make sure to always call response.end() - Node may not send
   // anything back to the client until you do. The string you pass to
